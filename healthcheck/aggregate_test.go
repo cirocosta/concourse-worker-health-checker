@@ -1,10 +1,10 @@
-package checkers_test
+package healthcheck_test
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/cirocosta/concourse-worker-health-checker/checkers"
+	"github.com/concourse/concourse/worker/healthcheck"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -44,7 +44,7 @@ func (c *noopChecker) WasCancelled() bool {
 
 var _ = Describe("aggregate", func() {
 	var (
-		aggregate *checkers.Aggregate
+		aggregate *healthcheck.Aggregate
 		err       error
 	)
 
@@ -53,17 +53,17 @@ var _ = Describe("aggregate", func() {
 	})
 
 	Context("having some checkers", func() {
-		var registeredCheckers []checkers.Checker
+		var registeredCheckers []healthcheck.Checker
 
 		Context("with none of them erroring", func() {
 			BeforeEach(func() {
-				registeredCheckers = []checkers.Checker{
+				registeredCheckers = []healthcheck.Checker{
 					&noopChecker{},
 					&noopChecker{},
 					&noopChecker{},
 				}
 
-				aggregate = &checkers.Aggregate{
+				aggregate = &healthcheck.Aggregate{
 					Checkers: registeredCheckers,
 				}
 			})
@@ -87,13 +87,13 @@ var _ = Describe("aggregate", func() {
 
 		Context("with at least one failing", func() {
 			BeforeEach(func() {
-				registeredCheckers = []checkers.Checker{
+				registeredCheckers = []healthcheck.Checker{
 					&noopChecker{Fail: true},
 					&noopChecker{WaitCancellation: true},
 					&noopChecker{WaitCancellation: true},
 				}
 
-				aggregate = &checkers.Aggregate{
+				aggregate = &healthcheck.Aggregate{
 					Checkers: registeredCheckers,
 				}
 			})

@@ -1,4 +1,4 @@
-package checkers
+package healthcheck
 
 import (
 	"context"
@@ -10,7 +10,7 @@ type Aggregate struct {
 	Checkers []Checker
 }
 
-func (h *Aggregate) Check(ctx context.Context) (err error) {
+func (h *Aggregate) Check(ctx context.Context) error {
 	var group *errgroup.Group
 
 	group, ctx = errgroup.WithContext(ctx)
@@ -22,6 +22,5 @@ func (h *Aggregate) Check(ctx context.Context) (err error) {
 		})
 	}
 
-	err = group.Wait()
-	return
+	return group.Wait()
 }

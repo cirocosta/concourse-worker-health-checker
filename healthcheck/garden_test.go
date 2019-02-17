@@ -1,9 +1,9 @@
-package checkers_test
+package healthcheck_test
 
 import (
 	"context"
 
-	"github.com/cirocosta/concourse-worker-health-checker/checkers"
+	"github.com/concourse/concourse/worker/healthcheck"
 	"github.com/onsi/gomega/ghttp"
 
 	. "github.com/onsi/ginkgo"
@@ -21,7 +21,7 @@ var _ = Describe("garden", func() {
 	})
 
 	JustBeforeEach(func() {
-		err = (&checkers.Garden{Address: "http://" + gServer.Addr()}).
+		err = (&healthcheck.Garden{Url: "http://" + gServer.Addr()}).
 			Check(context.Background())
 	})
 

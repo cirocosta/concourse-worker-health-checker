@@ -1,39 +1,39 @@
-package checkers
+package healthcheck
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
-
-	"github.com/pkg/errors"
 )
 
-func doRequest(ctx context.Context, method, url string, body io.Reader) (err error) {
+func doRequest(ctx context.Context, method, url string, body io.Reader) error {
 	var (
 		req  *http.Request
 		resp *http.Response
+		err  error
 	)
 
 	req, err = http.NewRequest(method, url, body)
 	if err != nil {
-		return
+		return err
 	}
 
 	req = req.WithContext(ctx)
 	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
-		return
+		return err
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		responseMessage, _ := ioutil.ReadAll(resp.Body)
-		err = errors.Errorf("non-success status code %d - %s",
+
+		return fmt.Errorf("non-success status code %d - %s",
 			resp.StatusCode, string(responseMessage))
-		return
 	}
 
-	return
+	return nil
 }

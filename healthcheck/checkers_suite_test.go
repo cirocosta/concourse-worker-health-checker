@@ -1,4 +1,4 @@
-package checkers_test
+package healthcheck_test
 
 import (
 	"testing"

@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/cirocosta/concourse-worker-health-checker/checkers"
+	"github.com/cirocosta/concourse-worker-health-checker/healthcheck"
 )
 
 var (
@@ -16,10 +16,10 @@ var (
 )
 
 func main() {
-	aggregate := &checkers.Aggregate{
-		Checkers: []checkers.Checker{
-			&checkers.Baggageclaim{Address: *baggageclaimUrl},
-			&checkers.Garden{Address: *gardenUrl},
+	aggregate := &healthcheck.Aggregate{
+		Checkers: []healthcheck.Checker{
+			&healthcheck.Baggageclaim{Url: *baggageclaimUrl},
+			&healthcheck.Garden{Url: *gardenUrl},
 		},
 	}
 

@@ -1,9 +1,9 @@
-package checkers_test
+package healthcheck_test
 
 import (
 	"context"
 
-	"github.com/cirocosta/concourse-worker-health-checker/checkers"
+	"github.com/concourse/concourse/worker/healthcheck"
 	"github.com/onsi/gomega/ghttp"
 
 	. "github.com/onsi/ginkgo"
@@ -21,7 +21,7 @@ var _ = Describe("baggageclaim", func() {
 	})
 
 	JustBeforeEach(func() {
-		err = (&checkers.Baggageclaim{Address: "http://" + bcServer.Addr()}).
+		err = (&healthcheck.Baggageclaim{Url: "http://" + bcServer.Addr()}).
 			Check(context.Background())
 	})
 
