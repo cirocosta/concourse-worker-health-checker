@@ -3,7 +3,7 @@ package healthcheck_test
 import (
 	"context"
 
-	"github.com/concourse/concourse/worker/healthcheck"
+	"github.com/cirocosta/concourse-worker-health-checker/healthcheck"
 	"github.com/onsi/gomega/ghttp"
 
 	. "github.com/onsi/ginkgo"

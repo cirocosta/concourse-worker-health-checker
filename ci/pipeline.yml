@@ -9,6 +9,7 @@ jobs:
   serial: true
   plan:
   - get: repository
+    trigger: true
   - task: test
     privileged: true
     config:
@@ -28,8 +29,5 @@ jobs:
 
       outputs:
       - name: image
-
-      caches:
-      - path: cache
 
       run: {path: build}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/concourse/concourse/worker/healthcheck"
+	"github.com/cirocosta/concourse-worker-health-checker/healthcheck"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
