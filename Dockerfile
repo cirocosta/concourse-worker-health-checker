@@ -7,9 +7,9 @@ FROM golang:alpine AS base
 	ADD ./ /go/src/github.com/cirocosta/concourse-worker-health-checker
 	WORKDIR /go/src/github.com/cirocosta/concourse-worker-health-checker
 
-	RUN go get -v
-	RUN go test -v ./...
+	RUN go get -t -v ./...
 	RUN go build -v -a -tags netgo -ldflags '-w' -o /usr/local/bin/checker
+	RUN go test -v ./...
 
 
 FROM alpine
