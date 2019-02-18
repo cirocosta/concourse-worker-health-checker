@@ -88,7 +88,9 @@ var _ = Describe("baggageclaim", func() {
 		var statusCode = 200
 
 		JustBeforeEach(func() {
-			err = bc.Destroy(context.TODO(), "handle")
+			ctx, _ := context.WithDeadline(
+				context.Background(), time.Now().Add(100*time.Millisecond))
+			err = bc.Destroy(ctx, "handle")
 		})
 
 		BeforeEach(func() {
@@ -101,5 +103,19 @@ var _ = Describe("baggageclaim", func() {
 		It("issues volume deletion request", func() {
 			Expect(bcServer.ReceivedRequests()).To(HaveLen(1))
 		})
+
+		Context("blocking forever", func() {
+			BeforeEach(func() {
+				bcServer.Reset()
+				bcServer.AppendHandlers(func(w http.ResponseWriter, r *http.Request) {
+					time.Sleep(5 * time.Second)
+				})
+			})
+
+			It("fails once context expires", func() {
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
 	})
 })

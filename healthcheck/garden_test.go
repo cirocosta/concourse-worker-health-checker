@@ -2,6 +2,8 @@ package healthcheck_test
 
 import (
 	"context"
+	"net/http"
+	"time"
 
 	"github.com/cirocosta/concourse-worker-health-checker/healthcheck"
 	"github.com/onsi/gomega/ghttp"
@@ -28,7 +30,9 @@ var _ = Describe("garden", func() {
 		var statusCode = 200
 
 		JustBeforeEach(func() {
-			err = g.Create(context.TODO(), "handle", "/rootfs")
+			ctx, _ := context.WithDeadline(
+				context.Background(), time.Now().Add(100*time.Millisecond))
+			err = g.Create(ctx, "handle", "/rootfs")
 		})
 
 		BeforeEach(func() {
@@ -41,6 +45,19 @@ var _ = Describe("garden", func() {
 
 		It("issues container creation request", func() {
 			Expect(gServer.ReceivedRequests()).To(HaveLen(1))
+		})
+
+		Context("blocking forever", func() {
+			BeforeEach(func() {
+				gServer.Reset()
+				gServer.AppendHandlers(func(w http.ResponseWriter, r *http.Request) {
+					time.Sleep(5 * time.Second)
+				})
+			})
+
+			It("fails once context expires", func() {
+				Expect(err).To(HaveOccurred())
+			})
 		})
 
 		Context("having positive response", func() {
@@ -64,7 +81,9 @@ var _ = Describe("garden", func() {
 		var statusCode = 200
 
 		JustBeforeEach(func() {
-			err = g.Destroy(context.TODO(), "handle")
+			ctx, _ := context.WithDeadline(
+				context.Background(), time.Now().Add(100*time.Millisecond))
+			err = g.Destroy(ctx, "handle")
 		})
 
 		BeforeEach(func() {
@@ -77,6 +96,19 @@ var _ = Describe("garden", func() {
 
 		It("issues volume deletion request", func() {
 			Expect(gServer.ReceivedRequests()).To(HaveLen(1))
+		})
+
+		Context("blocking forever", func() {
+			BeforeEach(func() {
+				gServer.Reset()
+				gServer.AppendHandlers(func(w http.ResponseWriter, r *http.Request) {
+					time.Sleep(5 * time.Second)
+				})
+			})
+
+			It("fails once context expires", func() {
+				Expect(err).To(HaveOccurred())
+			})
 		})
 
 		Context("having positive response", func() {
