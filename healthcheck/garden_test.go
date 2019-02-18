@@ -13,77 +13,85 @@ import (
 var _ = Describe("garden", func() {
 	var (
 		gServer *ghttp.Server
+		g       *healthcheck.Garden
 		err     error
 	)
 
 	BeforeEach(func() {
 		gServer = ghttp.NewServer()
+		g = &healthcheck.Garden{
+			Url: "http://" + gServer.Addr(),
+		}
 	})
 
-	JustBeforeEach(func() {
-		err = (&healthcheck.Garden{Url: "http://" + gServer.Addr()}).
-			Check(context.Background())
-	})
+	Context("Create", func() {
+		var statusCode = 200
 
-	Context("trying to create a volume", func() {
-		Context("with the creation failing", func() {
-			BeforeEach(func() {
-				gServer.AppendHandlers(
-					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("POST", "/containers"),
-						ghttp.RespondWith(500, "ok")))
-			})
+		JustBeforeEach(func() {
+			err = g.Create(context.TODO(), "handle", "/rootfs")
+		})
 
-			It("issues creation request", func() {
-				Expect(gServer.ReceivedRequests()).To(HaveLen(1))
-			})
+		BeforeEach(func() {
+			gServer.AppendHandlers(ghttp.CombineHandlers(
+				ghttp.VerifyRequest("POST", "/containers"),
+				ghttp.VerifyJSON(`{"handle":"handle","rootfs":"raw:///rootfs"}`),
+				ghttp.RespondWithJSONEncodedPtr(&statusCode, nil),
+			))
+		})
 
-			It("returns error", func() {
-				Expect(err).To(HaveOccurred())
+		It("issues container creation request", func() {
+			Expect(gServer.ReceivedRequests()).To(HaveLen(1))
+		})
+
+		Context("having positive response", func() {
+			It("doesn't fail", func() {
+				Expect(err).ToNot(HaveOccurred())
 			})
 		})
 
-		Context("having the creation working", func() {
+		Context("having negative response", func() {
 			BeforeEach(func() {
-				gServer.AppendHandlers(
-					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("POST", "/containers"),
-						ghttp.RespondWith(200, "ok")))
-
+				statusCode = 500
 			})
 
-			Context("having the deletion succeeding", func() {
-				BeforeEach(func() {
-					gServer.AppendHandlers(
-						ghttp.CombineHandlers(
-							ghttp.VerifyRequest("DELETE", MatchRegexp(`/containers/[a-z0-9-]+`)),
-							ghttp.RespondWith(200, "ok")))
-				})
+			It("fails", func() {
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
 
-				It("issues both requests", func() {
-					Expect(gServer.ReceivedRequests()).To(HaveLen(2))
-				})
+	Context("Destroy", func() {
+		var statusCode = 200
 
-				It("succeeds", func() {
-					Expect(err).ToNot(HaveOccurred())
-				})
+		JustBeforeEach(func() {
+			err = g.Destroy(context.TODO(), "handle")
+		})
+
+		BeforeEach(func() {
+			gServer.AppendHandlers(
+				ghttp.CombineHandlers(
+					ghttp.VerifyRequest("DELETE", MatchRegexp(`/containers/[a-z0-9-]+`)),
+					ghttp.RespondWithJSONEncodedPtr(&statusCode, nil),
+				))
+		})
+
+		It("issues volume deletion request", func() {
+			Expect(gServer.ReceivedRequests()).To(HaveLen(1))
+		})
+
+		Context("having positive response", func() {
+			It("doesn't fail", func() {
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+
+		Context("having negative response", func() {
+			BeforeEach(func() {
+				statusCode = 500
 			})
 
-			Context("having the deletion failing", func() {
-				BeforeEach(func() {
-					gServer.AppendHandlers(
-						ghttp.CombineHandlers(
-							ghttp.VerifyRequest("DELETE", MatchRegexp(`/containers/[a-z0-9-]+`)),
-							ghttp.RespondWith(500, "ok")))
-				})
-
-				It("issues both requests", func() {
-					Expect(gServer.ReceivedRequests()).To(HaveLen(2))
-				})
-
-				It("returns error", func() {
-					Expect(err).To(HaveOccurred())
-				})
+			It("fails", func() {
+				Expect(err).To(HaveOccurred())
 			})
 		})
 	})
