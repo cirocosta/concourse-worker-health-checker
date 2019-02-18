@@ -1,0 +1,35 @@
+resources:
+- name: repository
+  type: git
+  source:
+    uri: https://github.com/cirocosta/concourse-worker-health-checker
+
+jobs:
+- name: run
+  serial: true
+  plan:
+  - get: repository
+  - task: test
+    privileged: true
+    config:
+      platform: linux
+
+      image_resource:
+        type: registry-image
+        source: {repository: concourse/builder}
+
+      params:
+        REPOSITORY: cirocosta/concourse-worker-health-checker
+        TAG: latest
+        CONTEXT: repository
+
+      inputs:
+      - name: repository
+
+      outputs:
+      - name: image
+
+      caches:
+      - path: cache
+
+      run: {path: build}
