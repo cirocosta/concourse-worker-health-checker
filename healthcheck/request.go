@@ -2,13 +2,14 @@ package healthcheck
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 )
 
-func doRequest(ctx context.Context, method, url string, body io.Reader) error {
+func doRequest(ctx context.Context, method, url string, body io.Reader, respObj interface{}) error {
 	var (
 		req  *http.Request
 		resp *http.Response
@@ -33,6 +34,14 @@ func doRequest(ctx context.Context, method, url string, body io.Reader) error {
 
 		return fmt.Errorf("non-success status code %d - %s",
 			resp.StatusCode, string(responseMessage))
+	}
+
+	if respObj != nil {
+		decoder := json.NewDecoder(resp.Body)
+		err = decoder.Decode(respObj)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -1,10 +1,10 @@
 SRC = $(shell find . -name "*.go" -and -not -name "*_test.go")
-OUT = ./health-checker.out
+OUT = ./main.out
+
+build: $(OUT)
 
 image:
 	docker build -t a .
-
-build: $(OUT)
 
 fmt:
 	go fmt ./...

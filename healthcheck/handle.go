@@ -10,5 +10,5 @@ func createHandle() (string, error) {
 		return "", err
 	}
 
-	return u4.String(), nil
+	return "health-check-" + u4.String(), nil
 }

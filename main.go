@@ -16,17 +16,15 @@ var (
 )
 
 func main() {
-	aggregate := &healthcheck.Aggregate{
-		Checkers: []healthcheck.Checker{
-			&healthcheck.Baggageclaim{Url: *baggageclaimUrl},
-			&healthcheck.Garden{Url: *gardenUrl},
-		},
+	checker := &healthcheck.Worker{
+		VolumeProvider:    &healthcheck.Baggageclaim{Url: *baggageclaimUrl},
+		ContainerProvider: &healthcheck.Garden{Url: *gardenUrl},
 	}
 
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(*timeout))
 	defer cancel()
 
-	err := aggregate.Check(ctx)
+	err := checker.Check(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
