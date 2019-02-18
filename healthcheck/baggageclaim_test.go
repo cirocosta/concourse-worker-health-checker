@@ -21,20 +21,24 @@ var _ = Describe("baggageclaim", func() {
 	BeforeEach(func() {
 		bcServer = ghttp.NewServer()
 		bc = &healthcheck.Baggageclaim{
-			Url: bcServer.Addr(),
+			Url: "http://" + bcServer.Addr(),
 		}
 	})
 
 	Context("Create", func() {
+		var statusCode = 200
+
 		JustBeforeEach(func() {
 			volume, err = bc.Create(context.TODO(), "handle")
 		})
 
 		BeforeEach(func() {
-			bcServer.AppendHandlers(
-				ghttp.CombineHandlers(
-					ghttp.VerifyRequest("POST", "/volumes"),
-					ghttp.RespondWith(200, "ok")))
+			expectedVol := healthcheck.Volume{Handle: "handle", Path: "/rootfs"}
+
+			bcServer.AppendHandlers(ghttp.CombineHandlers(
+				ghttp.VerifyRequest("POST", "/volumes"),
+				ghttp.RespondWithJSONEncodedPtr(&statusCode, &expectedVol),
+			))
 		})
 
 		It("issues volume creation request", func() {
@@ -48,10 +52,15 @@ var _ = Describe("baggageclaim", func() {
 
 			It("returns a proper volume", func() {
 				Expect(volume.Handle).To(Equal("handle"))
+				Expect(volume.Path).To(Equal("/rootfs"))
 			})
 		})
 
 		Context("having negative response", func() {
+			BeforeEach(func() {
+				statusCode = 500
+			})
+
 			It("fails", func() {
 				Expect(err).To(HaveOccurred())
 			})
@@ -59,16 +68,17 @@ var _ = Describe("baggageclaim", func() {
 	})
 
 	Context("Destroy", func() {
+		var statusCode = 200
+
 		JustBeforeEach(func() {
 			err = bc.Destroy(context.TODO(), "handle")
 		})
 
 		BeforeEach(func() {
-			bcServer.AppendHandlers(
-				ghttp.CombineHandlers(
-					ghttp.VerifyRequest("DELETE",
-						MatchRegexp(`/volumes/[a-z0-9-]+`)),
-					ghttp.RespondWith(200, "ok")))
+			bcServer.AppendHandlers(ghttp.CombineHandlers(
+				ghttp.VerifyRequest("DELETE", MatchRegexp(`/volumes/[a-z0-9-]+`)),
+				ghttp.RespondWithJSONEncodedPtr(&statusCode, nil),
+			))
 		})
 
 		It("issues volume deletion request", func() {
