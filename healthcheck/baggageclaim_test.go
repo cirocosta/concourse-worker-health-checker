@@ -2,6 +2,8 @@ package healthcheck_test
 
 import (
 	"context"
+	"net/http"
+	"time"
 
 	"github.com/cirocosta/concourse-worker-health-checker/healthcheck"
 	"github.com/onsi/gomega/ghttp"
@@ -29,7 +31,9 @@ var _ = Describe("baggageclaim", func() {
 		var statusCode = 200
 
 		JustBeforeEach(func() {
-			volume, err = bc.Create(context.TODO(), "handle")
+			ctx, _ := context.WithDeadline(
+				context.Background(), time.Now().Add(100*time.Millisecond))
+			volume, err = bc.Create(ctx, "handle")
 		})
 
 		BeforeEach(func() {
@@ -53,6 +57,19 @@ var _ = Describe("baggageclaim", func() {
 			It("returns a proper volume", func() {
 				Expect(volume.Handle).To(Equal("handle"))
 				Expect(volume.Path).To(Equal("/rootfs"))
+			})
+		})
+
+		Context("blocking forever", func() {
+			BeforeEach(func() {
+				bcServer.Reset()
+				bcServer.AppendHandlers(func(w http.ResponseWriter, r *http.Request) {
+					time.Sleep(5 * time.Second)
+				})
+			})
+
+			It("fails once context expires", func() {
+				Expect(err).To(HaveOccurred())
 			})
 		})
 
