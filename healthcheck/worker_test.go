@@ -2,6 +2,7 @@ package healthcheck_test
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/cirocosta/concourse-worker-health-checker/healthcheck"
 
@@ -23,11 +24,6 @@ var _ = Describe("Worker", func() {
 		containerProvider = &fakes.FakeContainerProvider{}
 		volumeProvider = &fakes.FakeVolumeProvider{}
 
-		volumeProvider.CreateReturns(&healthcheck.Volume{
-			Handle: "handle",
-			Path:   "/rootfs",
-		}, nil)
-
 		worker = &healthcheck.Worker{
 			ContainerProvider: containerProvider,
 			VolumeProvider:    volumeProvider,
@@ -39,28 +35,81 @@ var _ = Describe("Worker", func() {
 			err = worker.Check(context.TODO())
 		})
 
-		Context("having volume and container creation working", func() {
-			It("doesn't error", func() {
-				Expect(err).ToNot(HaveOccurred())
+		Context("having volume creation failing", func() {
+			BeforeEach(func() {
+				volumeProvider.CreateReturns(nil, fmt.Errorf("an error"))
 			})
 
-			It("calls volume creation", func() {
-				Expect(volumeProvider.CreateCallCount()).To(Equal(1))
-			})
-
-			It("calls volume deletion", func() {
-				Expect(volumeProvider.DestroyCallCount()).To(Equal(1))
-			})
-
-			It("calls container creation", func() {
-				Expect(containerProvider.CreateCallCount()).To(Equal(1))
-			})
-
-			It("calls container deletion", func() {
-				Expect(containerProvider.DestroyCallCount()).To(Equal(1))
+			It("fails", func() {
+				Expect(err).To(HaveOccurred())
 			})
 		})
 
-		// TODO explore the possible errors
+		Context("having volume creation working", func() {
+			BeforeEach(func() {
+				volumeProvider.CreateReturns(&healthcheck.Volume{
+					Handle: "handle",
+					Path:   "/rootfs",
+				}, nil)
+			})
+
+			It("tries to create container", func() {
+				Expect(containerProvider.CreateCallCount()).To(Equal(1))
+			})
+
+			Context("having container creation failing", func() {
+				BeforeEach(func() {
+					containerProvider.CreateReturns(fmt.Errorf("an error"))
+				})
+
+				It("fails", func() {
+					Expect(err).To(HaveOccurred())
+				})
+
+				It("tries to delete volume", func() {
+					Expect(volumeProvider.DestroyCallCount()).To(Equal(1))
+				})
+			})
+
+			Context("having container creation working", func() {
+				It("tries to delete container", func() {
+					Expect(containerProvider.DestroyCallCount()).To(Equal(1))
+				})
+
+				Context("having container destruction failing", func() {
+					BeforeEach(func() {
+						containerProvider.DestroyReturns(fmt.Errorf("an error"))
+					})
+
+					It("fails", func() {
+						Expect(err).To(HaveOccurred())
+					})
+				})
+
+				Context("having container destruction working", func() {
+					It("tries to delete volume", func() {
+						Expect(volumeProvider.DestroyCallCount()).To(Equal(1))
+					})
+
+					Context("having volume destruction failing", func() {
+						BeforeEach(func() {
+							volumeProvider.DestroyReturns(fmt.Errorf("an error"))
+						})
+
+						It("fails", func() {
+							Expect(err).To(HaveOccurred())
+						})
+					})
+
+					Context("having volume destruction succeeding", func() {
+						It("succeeds", func() {
+							Expect(err).NotTo(HaveOccurred())
+						})
+
+					})
+				})
+			})
+		})
+
 	})
 })

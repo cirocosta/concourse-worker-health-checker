@@ -4,7 +4,7 @@ OUT = ./main.out
 build: $(OUT)
 
 image:
-	docker build -t a .
+	docker build -t cirocosta/concourse-worker-health-checker .
 
 fmt:
 	go fmt ./...

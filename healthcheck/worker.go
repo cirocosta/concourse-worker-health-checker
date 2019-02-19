@@ -2,6 +2,8 @@ package healthcheck
 
 import (
 	"context"
+
+	"github.com/hashicorp/go-multierror"
 )
 
 type Worker struct {
@@ -22,6 +24,11 @@ func (w *Worker) Check(ctx context.Context) error {
 
 	err = w.ContainerProvider.Create(ctx, handle, rootfs.Path)
 	if err != nil {
+		volDestructionErr := w.VolumeProvider.Destroy(ctx, handle)
+		if volDestructionErr != nil {
+			return multierror.Append(err, volDestructionErr)
+		}
+
 		return err
 	}
 
@@ -30,7 +37,7 @@ func (w *Worker) Check(ctx context.Context) error {
 		return err
 	}
 
-	err = w.VolumeProvider.Destroy(ctx, rootfs.Handle)
+	err = w.VolumeProvider.Destroy(ctx, handle)
 	if err != nil {
 		return err
 	}
