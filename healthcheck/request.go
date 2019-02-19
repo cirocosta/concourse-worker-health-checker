@@ -3,10 +3,11 @@ package healthcheck
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
 func doRequest(ctx context.Context, method, url string, body io.Reader, respObj interface{}) error {
@@ -18,7 +19,8 @@ func doRequest(ctx context.Context, method, url string, body io.Reader, respObj 
 
 	req, err = http.NewRequest(method, url, body)
 	if err != nil {
-		return err
+		return errors.Wrapf(err,
+			"couldn't create request obj")
 	}
 
 	req = req.WithContext(ctx)
@@ -26,7 +28,8 @@ func doRequest(ctx context.Context, method, url string, body io.Reader, respObj 
 
 	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
-		return err
+		return errors.Wrapf(err,
+			"failed to send http request")
 	}
 
 	defer resp.Body.Close()
@@ -34,7 +37,7 @@ func doRequest(ctx context.Context, method, url string, body io.Reader, respObj 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		responseMessage, _ := ioutil.ReadAll(resp.Body)
 
-		return fmt.Errorf("non-success status code %d - %s",
+		return errors.Errorf("non-success status code %d - %s",
 			resp.StatusCode, string(responseMessage))
 	}
 
@@ -42,7 +45,8 @@ func doRequest(ctx context.Context, method, url string, body io.Reader, respObj 
 		decoder := json.NewDecoder(resp.Body)
 		err = decoder.Decode(respObj)
 		if err != nil {
-			return err
+			return errors.Wrapf(err,
+				"failed to decode response into provided interface")
 		}
 	}
 

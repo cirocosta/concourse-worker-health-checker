@@ -15,21 +15,6 @@ type Baggageclaim struct {
 
 const emptyStrategyPayloadFormat = `{"handle":"%s", "strategy":{"type":"empty"}}`
 
-func (b *Baggageclaim) Destroy(ctx context.Context, handle string) error {
-	var (
-		url    = b.Url + "/volumes/" + handle
-		method = http.MethodDelete
-	)
-
-	err := doRequest(ctx, method, url, nil, nil)
-	if err != nil {
-		return errors.Wrapf(err,
-			"request failed")
-	}
-
-	return nil
-}
-
 func (b *Baggageclaim) Create(ctx context.Context, handle string) (*Volume, error) {
 	var (
 		url    = b.Url + "/volumes"
@@ -41,8 +26,23 @@ func (b *Baggageclaim) Create(ctx context.Context, handle string) (*Volume, erro
 	err := doRequest(ctx, method, url, body, vol)
 	if err != nil {
 		return nil, errors.Wrapf(err,
-			"request failed")
+			"create request failed")
 	}
 
 	return vol, nil
+}
+
+func (b *Baggageclaim) Destroy(ctx context.Context, handle string) error {
+	var (
+		url    = b.Url + "/volumes/" + handle
+		method = http.MethodDelete
+	)
+
+	err := doRequest(ctx, method, url, nil, nil)
+	if err != nil {
+		return errors.Wrapf(err,
+			"destroy request failed")
+	}
+
+	return nil
 }

@@ -25,7 +25,7 @@ func (g *Garden) Create(ctx context.Context, handle, rootfs string) error {
 	err := doRequest(ctx, method, url, body, nil)
 	if err != nil {
 		return errors.Wrapf(err,
-			"failed to created container")
+			"create request failed")
 	}
 
 	return nil
@@ -40,7 +40,7 @@ func (g *Garden) Destroy(ctx context.Context, handle string) error {
 	err := doRequest(ctx, method, url, nil, nil)
 	if err != nil {
 		return errors.Wrapf(err,
-			"request failed")
+			"destroy request failed")
 	}
 
 	return nil
